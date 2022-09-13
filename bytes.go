@@ -39,6 +39,17 @@ func (i *BytesIterator) NextBytes(n int) (bs []byte, err error) {
 	return
 }
 
+func (i *BytesIterator) NextBytesTo(b []byte, n int) (bs []byte, err error) {
+	if len(i.bs) < i.offset+n {
+		err = fmt.Errorf("astikit: slice length is %d, offset %d is invalid", len(i.bs), i.offset+n)
+		return
+	}
+	bs = b[:n]
+	copy(bs, i.bs[i.offset:i.offset+n])
+	i.offset += n
+	return
+}
+
 // NextBytesNoCopy returns the n next bytes
 // Be careful with this function as it doesn't make a copy of returned data.
 // bs will point to internal BytesIterator buffer.
@@ -79,6 +90,16 @@ func (i *BytesIterator) Dump() (bs []byte) {
 		return
 	}
 	bs = make([]byte, len(i.bs)-i.offset)
+	copy(bs, i.bs[i.offset:len(i.bs)])
+	i.offset = len(i.bs)
+	return
+}
+
+func (i *BytesIterator) DumpTo(b []byte) (bs []byte) {
+	if !i.HasBytesLeft() {
+		return
+	}
+	bs = b[:len(i.bs)-i.offset]
 	copy(bs, i.bs[i.offset:len(i.bs)])
 	i.offset = len(i.bs)
 	return
