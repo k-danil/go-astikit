@@ -1,6 +1,17 @@
 package astikit
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type BytesOffsetError struct {
+	l int
+	o int
+}
+
+func (boe BytesOffsetError) Error() string {
+	return fmt.Sprintf("astikit: slice length is %d, offset %d is invalid", boe.l, boe.o)
+}
 
 // BytesIterator represents an object capable of iterating sequentially and safely
 // through a slice of bytes. This is particularly useful when you need to iterate
@@ -19,8 +30,7 @@ func NewBytesIterator(bs []byte) *BytesIterator {
 // NextByte returns the next byte
 func (i *BytesIterator) NextByte() (b byte, err error) {
 	if len(i.bs) < i.offset+1 {
-		err = fmt.Errorf("astikit: slice length is %d, offset %d is invalid", len(i.bs), i.offset)
-		return
+		return 0, &BytesOffsetError{len(i.bs), i.offset}
 	}
 	b = i.bs[i.offset]
 	i.offset++
@@ -30,8 +40,7 @@ func (i *BytesIterator) NextByte() (b byte, err error) {
 // NextBytes returns the n next bytes
 func (i *BytesIterator) NextBytes(n int) (bs []byte, err error) {
 	if len(i.bs) < i.offset+n {
-		err = fmt.Errorf("astikit: slice length is %d, offset %d is invalid", len(i.bs), i.offset+n)
-		return
+		return nil, &BytesOffsetError{len(i.bs), i.offset}
 	}
 	bs = make([]byte, n)
 	copy(bs, i.bs[i.offset:i.offset+n])
@@ -45,8 +54,7 @@ func (i *BytesIterator) NextBytes(n int) (bs []byte, err error) {
 // If you need to modify returned bytes or store it for some time, use NextBytes instead
 func (i *BytesIterator) NextBytesNoCopy(n int) (bs []byte, err error) {
 	if len(i.bs) < i.offset+n {
-		err = fmt.Errorf("astikit: slice length is %d, offset %d is invalid", len(i.bs), i.offset+n)
-		return
+		return nil, &BytesOffsetError{len(i.bs), i.offset}
 	}
 	bs = i.bs[i.offset : i.offset+n]
 	i.offset += n
