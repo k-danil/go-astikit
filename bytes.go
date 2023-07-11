@@ -29,12 +29,14 @@ func NewBytesIterator(bs []byte) *BytesIterator {
 
 // NextByte returns the next byte
 func (i *BytesIterator) NextByte() (b byte, err error) {
-	if len(i.bs) < i.offset+1 {
-		return 0, &BytesOffsetError{len(i.bs), i.offset}
+	off := uint(i.offset)
+	if off < uint(len(i.bs)) {
+		b = i.bs[off]
+		i.offset++
+		return
 	}
-	b = i.bs[i.offset]
-	i.offset++
-	return
+
+	return 0, &BytesOffsetError{len(i.bs), i.offset}
 }
 
 // NextBytes returns the n next bytes
@@ -53,12 +55,15 @@ func (i *BytesIterator) NextBytes(n int) (bs []byte, err error) {
 // bs will point to internal BytesIterator buffer.
 // If you need to modify returned bytes or store it for some time, use NextBytes instead
 func (i *BytesIterator) NextBytesNoCopy(n int) (bs []byte, err error) {
-	if len(i.bs) < i.offset+n {
-		return nil, &BytesOffsetError{len(i.bs), i.offset}
+	off := uint(i.offset)
+	offPlus := uint(i.offset + n)
+	if offPlus <= uint(len(i.bs)) && offPlus >= off {
+		bs = i.bs[off:offPlus]
+		i.offset += n
+		return
 	}
-	bs = i.bs[i.offset : i.offset+n]
-	i.offset += n
-	return
+
+	return nil, &BytesOffsetError{len(i.bs), i.offset}
 }
 
 // Seek seeks to the nth byte
